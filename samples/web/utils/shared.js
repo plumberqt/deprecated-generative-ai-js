@@ -25,12 +25,12 @@ import { marked } from "https://esm.run/marked";
  * @returns {GoogleGenerativeAI.GenerativeModel}
  */
 export async function getGenerativeModel(params) {
-  // Fetch API key from server
-  // If you need a new API key, get it from https://makersuite.google.com/app/apikey
-  const API_KEY = await (await fetch("API_KEY")).text();
+  // 🔴 IMPORTANT:
+  // This is a STATIC WEB APP, so we directly provide the API key.
+  // Do NOT use fetch("API_KEY") in browser apps.
+  const API_KEY = "AIzaSyCkqAXlryl-RjZLm4dTxwIsMtL498sKapo";
 
   const genAI = new GoogleGenerativeAI(API_KEY);
-
   return genAI.getGenerativeModel(params);
 }
 
@@ -46,8 +46,12 @@ export async function fileToGenerativePart(file) {
     reader.onloadend = () => resolve(reader.result.split(",")[1]);
     reader.readAsDataURL(file);
   });
+
   return {
-    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+    inlineData: {
+      data: await base64EncodedDataPromise,
+      mimeType: file.type,
+    },
   };
 }
 
@@ -60,22 +64,22 @@ export function scrollToDocumentBottom() {
 }
 
 /**
- * Updates the `resultEl` with parsed markdown text returned by a `getResult()` call.
+ * Updates the result element with AI response.
  *
- * @param {HTMLElement}} resultEl
- * @param {() => Promise<GoogleGenerativeAI.GenerateContentResponse>} getResult
+ * @param {HTMLElement} resultEl
+ * @param {() => Promise<any>} getResult
  * @param {boolean} streaming
  */
 export async function updateUI(resultEl, getResult, streaming) {
   resultEl.className = "loading";
   let text = "";
+
   try {
     const result = await getResult();
 
     if (streaming) {
       resultEl.innerText = "";
       for await (const chunk of result.stream) {
-        // Get first candidate's current text chunk
         const chunkText = chunk.text();
         text += chunkText;
         resultEl.innerHTML = marked.parse(text);
@@ -86,11 +90,12 @@ export async function updateUI(resultEl, getResult, streaming) {
       text = response.text();
     }
 
-    resultEl.className = ""; // Remove .loading class
+    resultEl.className = "";
   } catch (err) {
     text += "\n\n> " + err;
     resultEl.className = "error";
   }
+
   resultEl.innerHTML = marked.parse(text);
   scrollToDocumentBottom();
 }
